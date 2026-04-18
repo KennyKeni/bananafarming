@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi, beforeEach } from "vitest";
 
@@ -7,8 +7,13 @@ const mockUseQuery = vi.fn<(name: unknown) => unknown>((name) =>
   queryResults.get(name),
 );
 const mockIncrement = vi.fn();
-const mockUseMutation = vi.fn<(name: unknown) => typeof mockIncrement>(
-  () => mockIncrement,
+const mockEnsurePlayer = vi.fn();
+const mockUseMutation = vi.fn<(name: unknown) => (...args: unknown[]) => unknown>(
+  (name) => {
+    if (name === "counter.increment") return mockIncrement;
+    if (name === "players.ensure") return mockEnsurePlayer;
+    return () => undefined;
+  },
 );
 
 vi.mock("convex/react", () => ({
@@ -24,6 +29,9 @@ vi.mock("../convex/_generated/api", () => ({
     },
     upgrades: {
       list: "upgrades.list",
+    },
+    players: {
+      ensure: "players.ensure",
     },
   },
 }));
@@ -51,8 +59,9 @@ describe("Cookie", () => {
     queryResults.set("upgrades.list", {});
     mockUseQuery.mockClear();
     mockIncrement.mockReset();
+    mockEnsurePlayer.mockReset();
     mockUseMutation.mockClear();
-    mockUseMutation.mockReturnValue(mockIncrement);
+    window.localStorage.setItem("banana-farm:playerId", "test-player");
   });
 
   test("shows loading state while query is pending", () => {
@@ -73,12 +82,32 @@ describe("Cookie", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("123");
   });
 
+  test("shows a 'grown together' subtext under the counter", () => {
+    setCounter(123);
+    render(<Cookie />);
+    expect(screen.getByText(/grown/i)).toBeInTheDocument();
+  });
+
   test("calls increment mutation when cookie clicked", async () => {
     setCounter(5);
     const user = userEvent.setup();
     render(<Cookie />);
     await user.click(screen.getByRole("button", { name: /banana/i }));
     expect(mockIncrement).toHaveBeenCalledTimes(1);
+  });
+
+  test("forwards the stored playerId to the increment mutation", async () => {
+    setCounter(5);
+    const user = userEvent.setup();
+    render(<Cookie />);
+    await user.click(screen.getByRole("button", { name: /banana/i }));
+    expect(mockIncrement).toHaveBeenCalledWith({ playerId: "test-player" });
+  });
+
+  test("ensures the player on mount with the stored playerId", () => {
+    setCounter(5);
+    render(<Cookie />);
+    expect(mockEnsurePlayer).toHaveBeenCalledWith({ playerId: "test-player" });
   });
 
   test("does not show +1 popup on initial render", () => {
@@ -196,6 +225,52 @@ describe("Cookie", () => {
     setCounter(13);
     rerender(<Cookie />);
     expect(screen.getAllByText("+3").length).toBe(1);
+  });
+
+  test("holding Enter does not auto-repeat the click", () => {
+    setCounter(5);
+    render(<Cookie />);
+    const btn = screen.getByRole("button", { name: /banana/i });
+    const allowed = fireEvent.keyDown(btn, { key: "Enter", repeat: true });
+    expect(allowed).toBe(false);
+  });
+
+  test("single Enter keydown is not prevented", () => {
+    setCounter(5);
+    render(<Cookie />);
+    const btn = screen.getByRole("button", { name: /banana/i });
+    const allowed = fireEvent.keyDown(btn, { key: "Enter", repeat: false });
+    expect(allowed).toBe(true);
+  });
+
+  test("remote-click popup has an inline color style (visually distinct)", () => {
+    setCounter(5);
+    setUpgrades({});
+    const { rerender } = render(<Cookie />);
+    setCounter(6);
+    rerender(<Cookie />);
+    const popup = screen.getByText("+1");
+    expect(popup.getAttribute("style") ?? "").toMatch(/color:/);
+  });
+
+  test("own-click popup has no inline color (uses default accent)", async () => {
+    setCounter(5);
+    setUpgrades({});
+    const user = userEvent.setup();
+    render(<Cookie />);
+    await user.click(screen.getByRole("button", { name: /banana/i }));
+    const popup = screen.getByText("+1");
+    expect(popup.getAttribute("style") ?? "").not.toMatch(/(^|;)\s*color:/);
+  });
+
+  test("cps popup has no inline color (uses default accent)", () => {
+    setCounter(10);
+    setUpgrades({ cursor: 2 });
+    const { rerender } = render(<Cookie />);
+    setCounter(12);
+    rerender(<Cookie />);
+    const popup = screen.getByText("+2");
+    expect(popup.getAttribute("style") ?? "").not.toMatch(/(^|;)\s*color:/);
   });
 
   test("own click does not double-pop when server confirms delta", async () => {

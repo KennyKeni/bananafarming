@@ -149,4 +149,56 @@ describe("UpgradesPanel", () => {
     expect(panel).toBeInTheDocument();
     expect(panel).toHaveAttribute("role", "region");
   });
+
+  test("mobileOpen prop drives the open class on the panel", () => {
+    mockQueries({ count: 0 });
+    render(<UpgradesPanel mobileOpen={true} />);
+    const panel = document.getElementById("upgrades-panel");
+    expect(panel?.className).toMatch(/\bopen\b/);
+  });
+
+  test("renders an X close button when mobileOpen is true", () => {
+    mockQueries({ count: 0 });
+    render(<UpgradesPanel mobileOpen={true} />);
+    expect(
+      screen.getByRole("button", { name: /close shop/i }),
+    ).toBeInTheDocument();
+  });
+
+  test("does not render X close button when mobileOpen is false", () => {
+    mockQueries({ count: 0 });
+    render(<UpgradesPanel mobileOpen={false} />);
+    expect(
+      screen.queryByRole("button", { name: /close shop/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("clicking the X close button calls onMobileToggle", async () => {
+    mockQueries({ count: 0 });
+    const onMobileToggle = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <UpgradesPanel mobileOpen={true} onMobileToggle={onMobileToggle} />,
+    );
+    await user.click(screen.getByRole("button", { name: /close shop/i }));
+    expect(onMobileToggle).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not render the Shop pill when mobileAnyOpen is true", () => {
+    mockQueries({ count: 0 });
+    render(<UpgradesPanel mobileAnyOpen={true} />);
+    const pill = screen
+      .queryAllByRole("button", { name: /^shop$/i })
+      .find((el) => el.classList.contains("upgrades-toggle"));
+    expect(pill).toBeUndefined();
+  });
+
+  test("clicking the Shop pill calls onMobileToggle when controlled", async () => {
+    mockQueries({ count: 0 });
+    const onMobileToggle = vi.fn();
+    const user = userEvent.setup();
+    render(<UpgradesPanel onMobileToggle={onMobileToggle} />);
+    await user.click(screen.getByRole("button", { name: /^shop$/i }));
+    expect(onMobileToggle).toHaveBeenCalledTimes(1);
+  });
 });

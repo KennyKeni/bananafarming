@@ -6,17 +6,31 @@ import {
   totalCps,
   type UpgradeKey,
 } from "../convex/upgrades/config";
+import { usePlayerId } from "./usePlayerId";
 import farmImg from "./assets/banana-farm.webp";
 
-type Popup = { id: number; x: number; y: number; label: string };
+type Popup = {
+  id: number;
+  x: number;
+  y: number;
+  label: string;
+  color?: string;
+};
 
 const POPUP_LIFETIME_MS = 1000;
 const PULSE_DURATION_MS = 180;
 
+function randomRemoteColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 85%, 68%)`;
+}
+
 export function Cookie() {
+  const playerId = usePlayerId();
   const counter = useQuery(api.counter.get);
   const upgrades = useQuery(api.upgrades.list);
   const increment = useMutation(api.counter.increment);
+  const ensurePlayer = useMutation(api.players.ensure);
   const [popups, setPopups] = useState<Popup[]>([]);
   const [pulsing, setPulsing] = useState(false);
   const nextIdRef = useRef(0);
@@ -62,21 +76,26 @@ export function Cookie() {
         `+${clickPower}`,
         Math.cos(angle) * radius,
         Math.sin(angle) * radius,
+        randomRemoteColor(),
       );
     }
   }, [count, cps, clickPower, ready]);
 
-  const spawnPopup = (label: string, x: number, y: number) => {
+  const spawnPopup = (label: string, x: number, y: number, color?: string) => {
     const id = nextIdRef.current++;
-    setPopups((prev) => [...prev, { id, x, y, label }]);
+    setPopups((prev) => [...prev, { id, x, y, label, color }]);
     setTimeout(() => {
       setPopups((prev) => prev.filter((p) => p.id !== id));
     }, POPUP_LIFETIME_MS);
   };
 
+  useEffect(() => {
+    void ensurePlayer({ playerId });
+  }, [ensurePlayer, playerId]);
+
   const handleClick = () => {
     pendingOwnClicksRef.current += 1;
-    void increment({});
+    void increment({ playerId });
     const angle = Math.random() * Math.PI * 2;
     const radius = 30 + Math.random() * 60;
     spawnPopup(
@@ -84,6 +103,12 @@ export function Cookie() {
       Math.cos(angle) * radius,
       Math.sin(angle) * radius,
     );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.repeat && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+    }
   };
 
   if (!ready) {
@@ -95,12 +120,14 @@ export function Cookie() {
       <p className="count" data-testid="count">
         {count}
       </p>
+      <p className="count-sub">grown by everyone</p>
       <div className="cookie-stage">
         <button
           type="button"
           className={`cookie${pulsing ? " cookie--pulse" : ""}`}
           aria-label="banana farm"
           onClick={handleClick}
+          onKeyDown={handleKeyDown}
         >
           <img src={farmImg} alt="" draggable={false} />
         </button>
@@ -112,6 +139,7 @@ export function Cookie() {
               {
                 "--popup-x": `${p.x}px`,
                 "--popup-y": `${p.y}px`,
+                ...(p.color ? { color: p.color } : {}),
               } as React.CSSProperties
             }
             aria-hidden="true"

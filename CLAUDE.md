@@ -26,6 +26,9 @@ Convex and the Worker deploy independently — only run the one whose code chang
 # Convex (after changes in convex/)
 bunx convex deploy --env-file .env.production.local
 
+# Local self-hosted Convex (dev server at 127.0.0.1:3210) — push local schema/function changes
+bunx convex deploy --env-file .env.local
+
 # Frontend (after changes in src/ or index.html)
 VITE_CONVEX_URL=https://convex.bananafarm.ing bun run build
 bunx wrangler deploy
@@ -38,9 +41,10 @@ bunx convex run --env-file .env.production.local counter:reset
 
 ### Server-authoritative game state
 
-Convex owns the entire game state; the frontend only reads. Two tables (`convex/schema.ts`):
+Convex owns the entire game state; the frontend only reads. Three tables (`convex/schema.ts`):
 - `counter` — single row, the shared click count
 - `upgrades` — one row per `(key, owned)` pair, indexed `by_key`
+- `players` — lifetime per-player stats (name, `clickBananas`, `clickCount`, `nameClaimedAt`, `lastSeenAt`); indexed `by_playerId`, `by_name`, `by_clickBananas`, `by_lastSeenAt`. Convex indexes aren't unique — `players.claim` and the upsert path in `counter.increment` enforce uniqueness via read-before-insert.
 
 Three mechanics, all computed server-side:
 - **Click** (`counter.increment`): reads all `upgrades`, computes `totalClickPower(ownedByKey)`, adds that to `counter.count`. The frontend's `handleClick` only invokes the mutation — it never decides how much to add.
@@ -62,6 +66,18 @@ Because clicks are server-authoritative, every connected client sees the same `c
 - anything else (including batched catch-up after tab was backgrounded) → no popup
 
 `pendingOwnClicksRef` is incremented on click, decremented when a matching delta arrives. This dedup is why the test suite asserts specific `+N` popup counts across rerenders.
+
+### Identity + leaderboard
+
+No auth. `src/usePlayerId.ts` generates a `crypto.randomUUID()` on first load and persists it in `localStorage` under `banana-farm:playerId` (with a try/catch + in-memory fallback for private-browsing modes that throw on `setItem`). This ID is passed to every server mutation that mutates player state (`increment`, `ensure`, `heartbeat`, `claim`).
+
+Name picking is a two-phase flow:
+1. On first load, `api.players.me` returns `null` or a row with `nameClaimedAt == null`. App mounts `<SlotMachine>` (overlay) which lets the user spin three reels (adjective + animal + 2-digit suffix) pulling from `convex/players/names.ts` pools. Clicking "Lock in" calls `api.players.claim`, which re-validates the name server-side via `validateName` (rejects anything outside the pools) — so the server can't be tricked into storing arbitrary names.
+2. `players.claim` also resolves collisions by appending 2 hex chars derived from a hash of `playerId` — deterministic per-player so retries converge.
+
+Active-player count is `api.players.activeCount`: rows with `lastSeenAt >= now - 30s`. Client sends `heartbeat` every 15s from `App.tsx`.
+
+Leaderboard ranking (`api.players.topLeaderboard`) is top-10 by `clickBananas` + a "you" row. For players outside the top 10, rank is computed with an O(N) scan guarded by a 5000-row cap — above that, `you.rank` is `null` (panel falls back to "not ranked").
 
 ### Falling bananas (`src/FallingBananas.tsx`)
 
