@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { totalCps, type UpgradeKey } from "../convex/upgrades/config";
-import yellowImg from "./assets/bananas-yellow.webp";
-import greenImg from "./assets/bananas-green.webp";
+import { api } from "../../convex/_generated/api";
+import { totalCps, type UpgradeKey } from "../../convex/upgrades/config";
+import yellowImg from "../assets/bananas-yellow.webp";
+import greenImg from "../assets/bananas-green.webp";
 
 type Banana = {
   id: number;

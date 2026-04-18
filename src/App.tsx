@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Cookie } from "./Cookie";
-import { UpgradesPanel } from "./UpgradesPanel";
-import { Leaderboard } from "./Leaderboard";
-import { FallingBananas } from "./FallingBananas";
-import { SlotMachine } from "./SlotMachine";
-import { usePlayerId } from "./usePlayerId";
+import { Cookie } from "./components/Cookie";
+import { UpgradesPanel } from "./components/UpgradesPanel";
+import { Leaderboard } from "./components/Leaderboard";
+import { FallingBananas } from "./components/FallingBananas";
+import { SlotMachine } from "./components/SlotMachine";
+import { usePlayerId } from "./hooks/usePlayerId";
 import "./App.css";
 
 const HEARTBEAT_INTERVAL_MS = 15_000;

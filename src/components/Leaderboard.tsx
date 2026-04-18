@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { usePlayerId } from "./usePlayerId";
+import { api } from "../../convex/_generated/api";
+import { usePlayerId } from "../hooks/usePlayerId";
 
 const PANEL_ID = "leaderboard-panel";
 

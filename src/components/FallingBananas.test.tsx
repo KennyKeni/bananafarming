@@ -10,7 +10,7 @@ vi.mock("convex/react", () => ({
   useQuery: (name: unknown) => mockUseQuery(name),
 }));
 
-vi.mock("../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     upgrades: { list: "upgrades.list" },
   },

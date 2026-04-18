@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { ADJECTIVES, ANIMALS } from "../convex/players/names";
+import { api } from "../../convex/_generated/api";
+import { ADJECTIVES, ANIMALS } from "../../convex/players/names";
 
 const SUFFIXES = Array.from({ length: 90 }, (_, i) =>
   (i + 10).toString().padStart(2, "0"),

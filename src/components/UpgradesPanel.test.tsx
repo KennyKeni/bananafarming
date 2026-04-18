@@ -11,7 +11,7 @@ vi.mock("convex/react", () => ({
   useMutation: (name: unknown) => mockUseMutation(name),
 }));
 
-vi.mock("../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     counter: { get: "counter.get", increment: "counter.increment" },
     upgrades: { list: "upgrades.list", buy: "upgrades.buy" },

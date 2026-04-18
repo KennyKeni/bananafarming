@@ -21,7 +21,7 @@ vi.mock("convex/react", () => ({
   useMutation: (name: unknown) => mockUseMutation(name),
 }));
 
-vi.mock("../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     counter: {
       get: "counter.get",
@@ -164,10 +164,10 @@ describe("Cookie", () => {
     setCounter(100);
     setUpgrades({ cursor: 3, grandma: 1 });
     const { rerender } = render(<Cookie />);
-    // cps = 3*1 + 1*5 = 8
-    setCounter(108);
+    // cps = 3*1 + 1*12 = 15
+    setCounter(115);
     rerender(<Cookie />);
-    expect(screen.getByText("+8")).toBeInTheDocument();
+    expect(screen.getByText("+15")).toBeInTheDocument();
   });
 
   test("click popup shows click power from owned click upgrades", async () => {

@@ -12,7 +12,7 @@ vi.mock("convex/react", () => ({
   useMutation: (name: unknown) => mockUseMutation(name),
 }));
 
-vi.mock("../convex/_generated/api", () => ({
+vi.mock("../../convex/_generated/api", () => ({
   api: {
     players: { claim: "players.claim" },
   },

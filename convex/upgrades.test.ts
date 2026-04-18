@@ -23,9 +23,9 @@ test("list reflects owned counts from DB and computes cost", async () => {
   });
   const result = await t.query(api.upgrades.list);
   expect(result.cursor).toEqual({ owned: 3, cost: costAt(10, 3) });
-  expect(result.grandma).toEqual({ owned: 1, cost: costAt(1000, 1) });
-  expect(result.farm).toEqual({ owned: 0, cost: 100000 });
-  expect(result.mine).toEqual({ owned: 0, cost: 10000000 });
+  expect(result.grandma).toEqual({ owned: 1, cost: costAt(100, 1) });
+  expect(result.farm).toEqual({ owned: 0, cost: 1000 });
+  expect(result.mine).toEqual({ owned: 0, cost: 10000 });
   expect(result.gstack).toEqual({ owned: 0, cost: 1000000000 });
 });
 
@@ -62,8 +62,8 @@ test("buy increments existing owned and uses scaled cost", async () => {
   });
   await t.mutation(api.upgrades.buy, { key: "cursor" });
   const counter = await t.query(api.counter.get);
-  // cost at owned=1 with 2x multiplier = 20
-  expect(counter?.count).toBe(50 - 20);
+  // cost at owned=1 with 1.5x multiplier = floor(10 * 1.5) = 15
+  expect(counter?.count).toBe(50 - 15);
   const list = await t.query(api.upgrades.list);
   expect(list.cursor.owned).toBe(2);
 });
@@ -91,7 +91,7 @@ test("buy rejects with insufficient_funds when no counter doc exists", async () 
   expect(counter).toBeNull();
 });
 
-test("buy on click upgrade uses 5x per-upgrade cost multiplier", async () => {
+test("buy on click upgrade uses 1.5x per-upgrade cost multiplier", async () => {
   const t = convexTest(schema);
   await t.run(async (ctx) => {
     await ctx.db.insert("counter", { count: 100 });
@@ -102,12 +102,12 @@ test("buy on click upgrade uses 5x per-upgrade cost multiplier", async () => {
   expect(counter?.count).toBe(95);
   await t.mutation(api.upgrades.buy, { key: "click" });
   counter = await t.query(api.counter.get);
-  // second click upgrade costs 5 * 5^1 = 25
-  expect(counter?.count).toBe(70);
+  // second click upgrade costs floor(5 * 1.5) = 7
+  expect(counter?.count).toBe(95 - 7);
   const list = await t.query(api.upgrades.list);
   expect(list.click.owned).toBe(2);
-  // next cost displayed = 5 * 5^2 = 125
-  expect(list.click.cost).toBe(125);
+  // next cost displayed = floor(5 * 1.5^2) = floor(11.25) = 11
+  expect(list.click.cost).toBe(11);
 });
 
 test("buy rejects with unknown_upgrade when key not in config", async () => {

@@ -29,8 +29,8 @@ test("tickOnce adds totalCps from owned upgrades", async () => {
   });
   await t.mutation(internal.tick.tickOnce, {});
   const counter = await t.query(api.counter.get);
-  // cps = 2*1 + 1*5 = 7 (grandma nerfed to 5)
-  expect(counter?.count).toBe(107);
+  // cps = 2*1 + 1*12 = 14
+  expect(counter?.count).toBe(114);
 });
 
 test("three sequential ticks accumulate correctly", async () => {
@@ -44,8 +44,8 @@ test("three sequential ticks accumulate correctly", async () => {
   await t.mutation(internal.tick.tickOnce, {});
   await t.mutation(internal.tick.tickOnce, {});
   const counter = await t.query(api.counter.get);
-  // 3 ticks * 7 cps = 21
-  expect(counter?.count).toBe(121);
+  // 3 ticks * 14 cps = 42
+  expect(counter?.count).toBe(142);
 });
 
 test("tickOnce ignores unknown upgrade keys in DB", async () => {

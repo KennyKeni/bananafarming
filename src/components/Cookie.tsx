@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { api } from "../../convex/_generated/api";
 import {
   totalClickPower,
   totalCps,
   type UpgradeKey,
-} from "../convex/upgrades/config";
-import { usePlayerId } from "./usePlayerId";
-import farmImg from "./assets/banana-farm.webp";
+} from "../../convex/upgrades/config";
+import { usePlayerId } from "../hooks/usePlayerId";
+import farmImg from "../assets/banana-farm.webp";
 
 type Popup = {
   id: number;
