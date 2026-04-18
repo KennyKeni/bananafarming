@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "banana-farm",
+  "account_id": "1efaea1829ddf92205d2b7fc6d6cce28",
+  "compatibility_date": "2026-04-17",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "bananafarm.ing", "custom_domain": true },
+    { "pattern": "www.bananafarm.ing", "custom_domain": true }
+  ]
+}
